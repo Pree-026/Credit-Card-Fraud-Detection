@@ -33,6 +33,9 @@ The deployed Streamlit application uses **dataset_small.csv** only for transacti
 
 To reproduce the complete training process in **app.ipynb**, download the original dataset from Kaggle and place it in the project folder as **dataset.csv**.
 
+##Live Demo
+https://credit-frauddetection.streamlit.app/
+
 ## Technologies Used
 
 - Python
