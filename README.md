@@ -21,8 +21,6 @@ This project predicts whether a credit card transaction is fraudulent using a Ma
 
 ## Dataset
 
-## Dataset
-
 The original dataset used for training was downloaded from the Kaggle Credit Card Fraud Detection dataset.
 
 **Dataset Link:**  
