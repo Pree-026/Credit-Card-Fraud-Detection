@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 import os
+from geopy.distance import geodesic
 
 st.set_page_config(page_title="💳 Credit Card Fraud Detector", layout="wide")
 
@@ -64,8 +65,13 @@ if model is None:
     st.sidebar.error("❌ No model file found. Please place your model file in this folder.")
     st.stop()
 
+# ---------- Load Label Encoders ----------
+encoders = joblib.load("label_encoder.jb")
+
 # ---------- Load Data ----------
-DATA_PATH = r"C:\Users\Preethi\Downloads\creditcardfraud\dataset.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "dataset.csv")
+
 data = pd.read_csv(DATA_PATH)
 
 data['trans_date_trans_time'] = pd.to_datetime(data['trans_date_trans_time'])
@@ -73,7 +79,13 @@ data['hour'] = data['trans_date_trans_time'].dt.hour
 data['day'] = data['trans_date_trans_time'].dt.day
 data['month'] = data['trans_date_trans_time'].dt.month
 data['cc_num_str'] = data['cc_num'].astype(str).str.replace(r'\.0$', '', regex=True)
-
+data["distance"] = data.apply(
+    lambda row: geodesic(
+        (row["lat"], row["long"]),
+        (row["merch_lat"], row["merch_long"])
+    ).km,
+    axis=1
+)
 # ---------- User Input ----------
 st.markdown("<div class='card'>", unsafe_allow_html=True)
 cc_input = st.text_input("🔢 Enter Credit Card Number (or last few digits)", placeholder="Example: 4922710831011201")
@@ -93,15 +105,26 @@ if cc_input:
 
         # ---------- Autofill ----------
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.subheader("🧾 Transaction Details (Auto-Filled — Editable)")
-        merchant = st.text_input("Merchant", chosen['merchant'])
-        category = st.text_input("Category", chosen['category'])
-        amt = st.number_input("Amount ($)", value=float(chosen['amt']))
-        gender = st.text_input("Gender", chosen['gender'])
-        hour = st.number_input("Hour", value=int(chosen['hour']))
-        day = st.number_input("Day", value=int(chosen['day']))
-        month = st.number_input("Month", value=int(chosen['month']))
-        distance = st.number_input("Distance", value=float(chosen.get('distance', 0.0)))
+        st.subheader("🧾 Transaction Details")
+        merchant = chosen["merchant"]
+        category = chosen["category"]
+        gender = chosen["gender"]
+
+        st.text_input("Merchant", merchant, disabled=True)
+        st.text_input("Category", category, disabled=True)
+        st.text_input("Gender", gender, disabled=True)
+        amt = float(chosen["amt"])
+        hour = int(chosen["hour"])
+        day = int(chosen["day"])
+        month = int(chosen["month"])
+
+        st.text_input("Amount ($)", f"{amt}", disabled=True)
+        st.text_input("Hour", str(hour), disabled=True)
+        st.text_input("Day", str(day), disabled=True)
+        st.text_input("Month", str(month), disabled=True)
+        distance = float(chosen["distance"])
+
+        st.text_input("Distance (km)",value=f"{distance:.2f}",disabled=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
         # ---------- Predict ----------
@@ -118,13 +141,11 @@ if cc_input:
                 'distance': distance
             }])
 
-            # --- Encode Categorical Columns ---
-            for col in ['merchant', 'category', 'gender']:
-                if X[col].dtype == 'object':
-                    X[col] = X[col].astype('category').cat.codes
-                if col in data.columns and data[col].dtype == 'object':
-                    data[col] = data[col].astype('category').cat.codes
+           
 
+            # --- Encode Categorical Columns using saved encoders ---
+            for col in ["merchant", "category", "gender"]:
+                X[col] = encoders[col].transform([X[col].iloc[0]])[0]
             try:
                 y_pred = int(model.predict(X)[0])
                 y_prob = model.predict_proba(X)[0][1] if hasattr(model, "predict_proba") else None
