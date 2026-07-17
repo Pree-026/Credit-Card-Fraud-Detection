@@ -70,7 +70,7 @@ encoders = joblib.load("label_encoder.jb")
 
 # ---------- Load Data ----------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, "dataset.csv")
+DATA_PATH = os.path.join(BASE_DIR, "dataset_small.csv")
 
 data = pd.read_csv(DATA_PATH)
 
