@@ -1,0 +1,1 @@
+The model was trained on the complete Kaggle Credit Card Fraud dataset. Due to GitHub and Streamlit Community Cloud file size limitations, the deployed application uses a representative subset (dataset_small.csv) for transaction lookup and auto-fill, while the trained model remains unchanged.
